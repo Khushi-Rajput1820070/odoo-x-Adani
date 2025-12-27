@@ -61,7 +61,9 @@ export default function LoginPage() {
         admin: "/dashboard",
         technician: "/maintenance?filter=assigned",
         user: "/dashboard",
-      }[user.role]
+        manager: "/dashboard",
+        requester: "/dashboard",
+      }[user.role] || "/dashboard"
 
       router.push(redirectPath)
     } else {

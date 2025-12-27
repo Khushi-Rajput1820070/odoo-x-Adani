@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
     if (currentUser.role === "technician") {
       filtered = requests.filter((r) => r.assignedToUserId === currentUser.id)
-    } else if (currentUser.role === "user") {
+    } else if (currentUser.role === "user" || currentUser.role === "requester") {
       filtered = requests.filter((r) => r.requestedByUserId === currentUser.id)
     }
 
@@ -200,7 +200,7 @@ export default function DashboardPage() {
                       >
                         <td className="py-3 px-3 text-white">{request.subject}</td>
                         <td className="py-3 px-3 text-slate-400">{getEquipmentName(request.equipmentId)}</td>
-                        {currentUser.role !== "user" && (
+                        {currentUser.role !== "user" && currentUser.role !== "requester" && (
                           <td className="py-3 px-3 text-slate-400">{getUserName(request.requestedByUserId)}</td>
                         )}
                         <td className="py-3 px-3">
@@ -222,8 +222,8 @@ export default function DashboardPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={currentUser.role === "user" ? 3 : 4} className="py-6 text-center text-slate-400">
-                        {currentUser.role === "user"
+                      <td colSpan={currentUser.role === "user" || currentUser.role === "requester" ? 3 : 4} className="py-6 text-center text-slate-400">
+                        {currentUser.role === "user" || currentUser.role === "requester"
                           ? "No requests found. Report an issue to get started!"
                           : "No requests found"}
                       </td>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { storage } from "@/lib/storage"
-import type { User } from "@/lib/types"
+import type { User, UserRole } from "@/lib/types"
 import AppLayout from "@/components/layout/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -26,7 +26,7 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "user" as "admin" | "technician" | "user",
+    role: "user" as UserRole,
   })
 
   useEffect(() => {
