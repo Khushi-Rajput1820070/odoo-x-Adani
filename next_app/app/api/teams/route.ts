@@ -6,68 +6,84 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   
-  if (id) {
-    const team = await DB.getById('teams', id);
-    return NextResponse.json(team);
+  // Construct query parameters
+  let url = '/api/teams';
+  const params = new URLSearchParams();
+  if (id) params.append('id', id);
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
   }
   
-  const teams = await DB.getAll('teams');
-  return NextResponse.json(teams);
+  try {
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}${url}`);
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    return NextResponse.json({ error: 'Failed to fetch teams' }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  const data = await request.json();
-  data.id = data.id || randomUUID();
-  data.createdAt = data.createdAt || new Date().toISOString();
-  data.memberIds = data.memberIds || [];
-  
-  const teams = await DB.getAll('teams');
-  teams.push(data);
-  await DB.setAll('teams', teams);
-  
-  return NextResponse.json(data);
+  try {
+    const data = await request.json();
+    data.id = data.id || randomUUID();
+    data.createdAt = data.createdAt || new Date().toISOString();
+    
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/teams`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error creating team:', error);
+    return NextResponse.json({ error: 'Failed to create team' }, { status: 500 });
+  }
 }
 
 export async function PUT(request: Request) {
-  const data = await request.json();
-  let teams = await DB.getAll('teams');
-  teams = teams.map((t: any) => t.id === data.id ? data : t);
-  await DB.setAll('teams', teams);
-  
-  return NextResponse.json(data);
+  try {
+    const data = await request.json();
+    
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/teams`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error updating team:', error);
+    return NextResponse.json({ error: 'Failed to update team' }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   
-  if (id) {
-    let teams = await DB.getAll('teams');
-    teams = teams.filter((t: any) => t.id !== id);
-    await DB.setAll('teams', teams);
-    
-    // Update equipment that was assigned to this team
-    let equipment = await DB.getAll('equipment');
-    equipment = equipment.map((e: any) => {
-      if (e.maintenanceTeamId === id) {
-        e.maintenanceTeamId = ''; // Clear team assignment
-      }
-      return e;
-    });
-    await DB.setAll('equipment', equipment);
-    
-    // Update requests that were assigned to this team
-    let requests = await DB.getAll('requests');
-    requests = requests.map((r: any) => {
-      if (r.teamId === id) {
-        r.teamId = ''; // Clear team assignment
-      }
-      return r;
-    });
-    await DB.setAll('requests', requests);
-    
-    return NextResponse.json({ success: true });
+  if (!id) {
+    return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
   }
   
-  return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
+  try {
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/teams?id=${id}`, {
+      method: 'DELETE',
+    });
+    
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error deleting team:', error);
+    return NextResponse.json({ error: 'Failed to delete team' }, { status: 500 });
+  }
 }

@@ -9,78 +9,88 @@ export async function GET(request: Request) {
   const status = searchParams.get('status');
   const category = searchParams.get('category');
   
-  if (id) {
-    const equipment = await DB.getById('equipment', id);
-    return NextResponse.json(equipment);
+  // Construct query parameters
+  let url = '/api/equipment';
+  const params = new URLSearchParams();
+  if (id) params.append('id', id);
+  if (teamId) params.append('teamId', teamId);
+  if (status) params.append('status', status);
+  if (category) params.append('category', category);
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
   }
   
-  let equipment = await DB.getAll('equipment');
-  
-  if (teamId) {
-    equipment = equipment.filter(e => e.maintenanceTeamId === teamId);
+  try {
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}${url}`);
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error fetching equipment:', error);
+    return NextResponse.json({ error: 'Failed to fetch equipment' }, { status: 500 });
   }
-  
-  if (status) {
-    equipment = equipment.filter(e => e.status === status);
-  }
-  
-  if (category) {
-    equipment = equipment.filter(e => e.category === category);
-  }
-  
-  return NextResponse.json(equipment);
 }
 
 export async function POST(request: Request) {
-  const data = await request.json();
-  data.id = data.id || randomUUID();
-  data.status = data.status || 'Active';
-  data.createdAt = data.createdAt || new Date().toISOString();
-  
-  const equipment = await DB.getAll('equipment');
-  equipment.push(data);
-  await DB.setAll('equipment', equipment);
-  
-  return NextResponse.json(data);
+  try {
+    const data = await request.json();
+    data.id = data.id || randomUUID();
+    data.status = data.status || 'Active';
+    data.createdAt = data.createdAt || new Date().toISOString();
+    
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/equipment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error creating equipment:', error);
+    return NextResponse.json({ error: 'Failed to create equipment' }, { status: 500 });
+  }
 }
 
 export async function PUT(request: Request) {
-  const data = await request.json();
-  let equipment = await DB.getAll('equipment');
-  equipment = equipment.map((e: any) => e.id === data.id ? data : e);
-  await DB.setAll('equipment', equipment);
-  
-  // If equipment is marked as scrapped, update related requests
-  if (data.status === 'Scrapped') {
-    const requests = await DB.getAll('requests');
-    const updatedRequests = requests.map((req: any) => {
-      if (req.equipmentId === data.id && req.maintenanceFor === 'Equipment') {
-        req.stage = 'Scrap';
-      }
-      return req;
+  try {
+    const data = await request.json();
+    
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/equipment`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
-    await DB.setAll('requests', updatedRequests);
+    
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error updating equipment:', error);
+    return NextResponse.json({ error: 'Failed to update equipment' }, { status: 500 });
   }
-  
-  return NextResponse.json(data);
 }
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   
-  if (id) {
-    let equipment = await DB.getAll('equipment');
-    equipment = equipment.filter((e: any) => e.id !== id);
-    await DB.setAll('equipment', equipment);
-    
-    // Also remove related requests
-    let requests = await DB.getAll('requests');
-    requests = requests.filter((r: any) => r.equipmentId !== id);
-    await DB.setAll('requests', requests);
-    
-    return NextResponse.json({ success: true });
+  if (!id) {
+    return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
   }
   
-  return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
+  try {
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/equipment?id=${id}`, {
+      method: 'DELETE',
+    });
+    
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error deleting equipment:', error);
+    return NextResponse.json({ error: 'Failed to delete equipment' }, { status: 500 });
+  }
 }

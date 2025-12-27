@@ -1,214 +1,144 @@
-# 🛠️ GearGuard  
-### The Ultimate Maintenance Tracker
+# GearGuard - Equipment Maintenance Tracking System
 
-> A smart maintenance management system that seamlessly connects **Equipment**, **Maintenance Teams**, and **Requests** — built to digitize and optimize breakdown handling and preventive maintenance.
+GearGuard is a comprehensive system to track company machines and fix them properly without confusion. It connects equipment, maintenance teams, and maintenance requests in one place.
 
----
+## Project Structure
 
-## 📌 Problem Statement
+This project consists of two main parts:
+- **Frontend**: A Next.js application in the `next_app` directory
+- **Backend**: A Node.js/Express API with MongoDB in the `backend` directory
 
-Organizations managing machines, vehicles, and technical assets often rely on manual or fragmented systems to handle maintenance.  
-This leads to:
-- Poor visibility of asset health
-- Unclear responsibility for repairs
-- Delayed breakdown resolution
-- No structured preventive maintenance planning
+## Backend Setup
 
-The challenge is to build a **smart, Odoo-like maintenance module** that can:
-- Track all company assets
-- Manage corrective and preventive maintenance
-- Assign work to the right teams
-- Provide real-time visibility and intelligent UX
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 
----
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## 💡 Our Solution: GearGuard
+3. Create a `.env` file in the `backend` directory with the following content:
+   ```env
+   MONGODB_URI=mongodb+srv://lovelyblinks2007_db_user:oddo_adani@cluster0.xfpgxlr.mongodb.net/gearguard?retryWrites=true&w=majority
+   PORT=5000
+   ```
 
-**GearGuard** is a role-based maintenance tracking platform that manages the **entire lifecycle of a maintenance request**, from issue reporting to repair completion.
+4. **Important MongoDB Setup Note**: 
+   If you're getting a connection error, it's likely because your IP address needs to be whitelisted in MongoDB Atlas. You have two options:
+   
+   **Option A: Whitelist your IP in MongoDB Atlas**
+   - Go to MongoDB Atlas dashboard
+   - Navigate to Network Access
+   - Add your current IP address to the whitelist
+   - Or add 0.0.0.0/0 to allow access from any IP (not recommended for production)
+   
+   **Option B: Use a local MongoDB instance for development**
+   - Install MongoDB locally
+   - Change the MONGODB_URI to: `mongodb://localhost:27017/gearguard`
+   - Make sure MongoDB service is running locally
 
-It is designed around the core philosophy defined in the problem statement:
+5. Start the backend server:
+   ```bash
+   # For development
+   npm run dev
+   
+   # For production
+   npm start
+   ```
 
-> **Equipment (what is broken) → Teams (who fix it) → Requests (the work to be done)**
+## Frontend Setup
 
----
+1. Navigate to the frontend directory:
+   ```bash
+   cd next_app
+   ```
 
-## 🎯 Objectives Achieved
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-✔ Centralized equipment registry  
-✔ Specialized maintenance teams  
-✔ Corrective & preventive maintenance flows  
-✔ Smart auto-fill & automation  
-✔ Visual Kanban & Calendar views  
-✔ Complete audit trail of repairs  
+3. Create a `.env.local` file in the `next_app` directory with the following content:
+   ```env
+   BACKEND_URL=http://localhost:5000
+   ```
 
----
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## 👥 User Roles
+5. Open your browser to http://localhost:3000
 
-### 👤 User (Employee / Operator)
-- Creates maintenance requests
-- Reports breakdowns
-- Tracks request progress
+## How It Works
 
-### 🧑‍🔧 Technician
-- Belongs to a maintenance team
-- Picks assigned requests
-- Executes repairs
-- Logs work duration
+GearGuard connects three main components:
 
-### 🧑‍💼 Manager / Admin
-- Oversees all equipment and requests
-- Assigns technicians
-- Schedules preventive maintenance
-- Reviews completed work
+1. **Equipment** - All machines/assets in your company (CNC Machine, Printer, Laptop, Vehicle, etc.)
+2. **Maintenance Teams** - Groups of technicians (Mechanics, Electricians, IT Support, etc.)
+3. **Maintenance Requests** - Issues and tasks (Corrective: something broke, Preventive: planned checkups)
 
----
+### Key Features
 
-## 🗂️ Core Functional Areas
+- **Equipment Tracking**: Store details about each machine including name, serial number, location, department, and maintenance team
+- **Request Management**: Create and track maintenance requests with different types (Corrective vs Preventive)
+- **Team Management**: Organize technicians into teams and assign them to equipment
+- **Kanban Board**: Visual board to track requests in different stages (New, In Progress, Repaired, Scrap)
+- **Calendar Integration**: Schedule preventive maintenance and track deadlines
+- **Notifications**: Get notified about new requests and updates
 
-### 🧾 Equipment Management
-- Central database of all company assets
-- Equipment tracking by:
-  - Department
-  - Assigned employee
-- Each equipment has:
-  - Name & serial number
-  - Purchase date & warranty
-  - Physical location
-  - Assigned maintenance team
-  - Default responsible technician
+### Workflow
 
----
+1. **Equipment Registration**: Add all company equipment to the system
+2. **Team Assignment**: Assign maintenance teams to each piece of equipment
+3. **Request Creation**: When something breaks or needs maintenance, create a request
+4. **Task Assignment**: Assign requests to appropriate team members
+5. **Progress Tracking**: Move requests through the workflow (New → In Progress → Repaired)
+6. **Reporting**: Generate reports on maintenance activities
 
-### 👥 Maintenance Teams
-- Multiple specialized teams supported
-  - Mechanics
-  - Electricians
-  - IT Support
-- Technicians are linked to teams
-- Requests routed automatically to the correct team
+## Technologies Used
 
----
+- **Frontend**: Next.js 16, React 19, TypeScript
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB (via Mongoose ODM)
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Icons**: Lucide React
 
-### 📋 Maintenance Requests
+## API Endpoints
 
-#### Request Types
-- **Corrective** – Unplanned breakdown repair
-- **Preventive** – Scheduled routine maintenance
+The backend provides the following REST API endpoints:
 
-#### Key Request Fields
-- Subject (issue description)
-- Equipment (affected asset)
-- Maintenance team (auto-filled)
-- Scheduled date (for preventive)
-- Duration (hours spent)
-- Status (lifecycle stage)
+- `/api/equipment` - Manage equipment
+- `/api/requests` - Manage maintenance requests
+- `/api/users` - Manage users
+- `/api/teams` - Manage maintenance teams
+- `/api/categories` - Manage equipment categories
+- `/api/notifications` - Manage notifications
+- `/api/tracking-logs` - Manage tracking logs
+- `/api/requirements` - Manage requirements
+- `/api/workcenters` - Manage work centers
 
----
+## Data Models
 
-## 🔄 Functional Workflows
+The system includes the following core data models:
 
-### 🔴 Flow 1: Breakdown (Corrective Maintenance)
+- **User**: System users with different roles (admin, technician, user)
+- **Team**: Groups of technicians responsible for maintenance
+- **Equipment**: Company machines and assets
+- **MaintenanceRequest**: Maintenance tasks and issues
+- **EquipmentCategory**: Categories for organizing equipment
+- **Notification**: System notifications
+- **TrackingLog**: Progress tracking for requests
+- **Requirement**: Resource requirements for maintenance
+- **WorkCenter**: Work centers for maintenance operations
 
-1. Any user creates a request
-2. User selects equipment
-3. System automatically fetches:
-   - Equipment category
-   - Responsible maintenance team
-4. Request starts in **New**
-5. Technician or manager assigns the task
-6. Status moves to **In Progress**
-7. Technician repairs equipment
-8. Technician records **hours spent**
-9. Request moves to **Repaired**
+## Authentication
 
----
+Authentication is not implemented in this version. All endpoints are currently public. This will be implemented in future versions.
 
-### 🟢 Flow 2: Routine Checkup (Preventive Maintenance)
+## License
 
-1. Manager creates a **Preventive** request
-2. Scheduled date is selected
-3. Request appears in the **Calendar View**
-4. Technician performs maintenance on scheduled date
-5. Duration is logged
-6. Request is marked **Repaired**
-
----
-
-## 🧩 User Interface & Views
-
-### 🗃️ Maintenance Kanban Board
-- Primary workspace for technicians
-- Requests grouped by stages:
-  - New
-  - In Progress
-  - Repaired
-  - Scrap
-- Drag & Drop between stages
-- Visual indicators:
-  - Technician avatar
-  - Overdue requests highlighted in red
-
----
-
-### 📆 Calendar View
-- Displays all **Preventive Maintenance** requests
-- Click on a date to schedule new maintenance
-- Helps technicians plan upcoming work
-
----
-
-### 📊 Smart Views & UX Enhancements
-
-#### 🔘 Smart Button (Equipment View)
-- “Maintenance” button on each equipment
-- Opens all related maintenance requests
-- Badge shows count of open requests
-
-#### 🗑️ Scrap Logic
-- If a request is moved to **Scrap**:
-  - Equipment is marked as unusable
-  - Logical flag or note is added
-  - Prevents future assignments
-
----
-
-## ✨ Smart & Automation Features
-
-- Auto-fill maintenance team based on equipment
-- Role-based visibility of requests
-- Intelligent grouping & filtering
-- Visual status indicators
-- Real-time updates across views
-
----
-
-## 🧠 Why GearGuard Stands Out
-
-- Fully aligned with problem statement
-- Covers both **corrective and preventive** maintenance
-- Strong focus on **UX & workflow clarity**
-- Smart features beyond basic CRUD
-- Designed like a real-world enterprise module
-
----
-
-## 📌 Real-World Impact
-
-- Faster breakdown resolution
-- Clear ownership of maintenance tasks
-- Reduced asset downtime
-- Better preventive planning
-- Scalable for any organization size
-
----
-
-## 🏁 Hackathon Summary
-
-**GearGuard** is not just a form-based system —  
-it is a **complete, intelligent maintenance management module** built with real operational challenges in mind.
-
----
-
-### 🚀 Built by **Team MVT**
-*From breakdown to repair — fully tracked.*
+This project is licensed under the MIT License.
