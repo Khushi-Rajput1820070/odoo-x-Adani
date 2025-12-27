@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
     if (currentUser.role === "technician") {
       filtered = requests.filter((r) => r.assignedToUserId === currentUser.id)
-    } else if (currentUser.role === "user" || currentUser.role === "requester") {
+    } else if (currentUser.role === "user") {
       filtered = requests.filter((r) => r.requestedByUserId === currentUser.id)
     }
 
@@ -95,14 +95,6 @@ export default function DashboardPage() {
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
             >
               Report Issue
-            </Button>
-          )}
-          {currentUser.role === "technician" && (
-            <Button
-              onClick={() => router.push("/maintenance/new")}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
-            >
-              New Request
             </Button>
           )}
           {currentUser.role === "admin" && (
@@ -171,22 +163,119 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Requests */}
-          <Card className="lg:col-span-2 bg-slate-800/30 border-slate-700/50 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              {currentUser.role === "user" ? "My Requests" : "Recent Requests"}
-            </h3>
+        {/* User Dashboard - My Equipment and My Requests */}
+        {currentUser.role === "user" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* My Equipment Section */}
+            <Card className="bg-slate-800/30 border-slate-700/50 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">My Equipment</h3>
+                <Button
+                  onClick={() => router.push("/equipment")}
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  View All
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {equipment.slice(0, 5).map((eq) => (
+                  <div
+                    key={eq.id}
+                    onClick={() => router.push(`/equipment/${eq.id}`)}
+                    className="p-3 bg-slate-700/30 rounded border border-slate-600/30 hover:bg-slate-700/50 cursor-pointer transition-colors"
+                  >
+                    <p className="font-medium text-white text-sm">{eq.name}</p>
+                    <p className="text-xs text-slate-400 mt-1">{eq.category} • {eq.location}</p>
+                    <p className="text-xs text-slate-500 mt-1">Serial: {eq.serialNumber}</p>
+                  </div>
+                ))}
+                {equipment.length === 0 && (
+                  <p className="text-slate-400 text-sm text-center py-4">No equipment available</p>
+                )}
+              </div>
+            </Card>
+
+            {/* My Requests Section */}
+            <Card className="bg-slate-800/30 border-slate-700/50 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">My Requests</h3>
+                <Button
+                  onClick={() => router.push("/maintenance?filter=my-requests")}
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  View All
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-2 px-2 font-medium text-slate-400 text-xs">Subject</th>
+                      <th className="text-left py-2 px-2 font-medium text-slate-400 text-xs">Status</th>
+                      <th className="text-left py-2 px-2 font-medium text-slate-400 text-xs">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequests.length > 0 ? (
+                      filteredRequests
+                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .slice(0, 5)
+                        .map((request) => (
+                          <tr
+                            key={request.id}
+                            className="border-b border-slate-700/50 hover:bg-slate-700/20 cursor-pointer"
+                            onClick={() => router.push(`/maintenance/${request.id}`)}
+                          >
+                            <td className="py-2 px-2 text-white text-xs">{request.subject}</td>
+                            <td className="py-2 px-2">
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  request.stage === "New"
+                                    ? "bg-blue-500/20 text-blue-300"
+                                    : request.stage === "In Progress"
+                                      ? "bg-yellow-500/20 text-yellow-300"
+                                      : request.stage === "Repaired"
+                                        ? "bg-green-500/20 text-green-300"
+                                        : "bg-red-500/20 text-red-300"
+                                }`}
+                              >
+                                {request.stage}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-slate-400 text-xs">
+                              {new Date(request.createdAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="py-6 text-center text-slate-400 text-sm">
+                          No requests found. Report an issue to get started!
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        ) : (
+          /* Admin/Technician Dashboard */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Requests */}
+            <Card className="lg:col-span-2 bg-slate-800/30 border-slate-700/50 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Recent Requests</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700">
                     <th className="text-left py-3 px-3 font-medium text-slate-400">Subject</th>
                     <th className="text-left py-3 px-3 font-medium text-slate-400">Equipment</th>
-                    {currentUser.role !== "user" && (
-                      <th className="text-left py-3 px-3 font-medium text-slate-400">Requester</th>
-                    )}
+                    <th className="text-left py-3 px-3 font-medium text-slate-400">Requested By</th>
                     <th className="text-left py-3 px-3 font-medium text-slate-400">Stage</th>
                   </tr>
                 </thead>
@@ -200,9 +289,7 @@ export default function DashboardPage() {
                       >
                         <td className="py-3 px-3 text-white">{request.subject}</td>
                         <td className="py-3 px-3 text-slate-400">{getEquipmentName(request.equipmentId)}</td>
-                        {currentUser.role !== "user" && currentUser.role !== "requester" && (
-                          <td className="py-3 px-3 text-slate-400">{getUserName(request.requestedByUserId)}</td>
-                        )}
+                        <td className="py-3 px-3 text-slate-400">{getUserName(request.requestedByUserId)}</td>
                         <td className="py-3 px-3">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
@@ -222,10 +309,8 @@ export default function DashboardPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={currentUser.role === "user" || currentUser.role === "requester" ? 3 : 4} className="py-6 text-center text-slate-400">
-                        {currentUser.role === "user" || currentUser.role === "requester"
-                          ? "No requests found. Report an issue to get started!"
-                          : "No requests found"}
+                      <td colSpan={4} className="py-6 text-center text-slate-400">
+                        No requests found
                       </td>
                     </tr>
                   )}
@@ -234,7 +319,7 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          {/* Quick Stats - Show team performance for managers/admins, schedule for technicians */}
+          {/* Quick Stats - Show team performance for admins, schedule for technicians */}
           <Card className="bg-slate-800/30 border-slate-700/50 p-6">
             {currentUser.role === "technician" ? (
               <>
@@ -273,7 +358,8 @@ export default function DashboardPage() {
               </>
             )}
           </Card>
-        </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   )

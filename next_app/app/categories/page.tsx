@@ -17,7 +17,7 @@ export default function CategoriesPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ name: "", description: "", company: "" })
+  const [formData, setFormData] = useState({ name: "", description: "", company: "", responsible: "" })
 
   useEffect(() => {
     const user = storage.getCurrentUser()
@@ -31,7 +31,7 @@ export default function CategoriesPage() {
 
   if (!currentUser) return null
 
-  if (currentUser.role === "technician" || currentUser.role === "requester") {
+  if (currentUser.role === "technician" || currentUser.role === "user") {
     return (
       <AppLayout activeTab="categories">
         <Card className="bg-slate-800/30 border-slate-700/50 p-8 text-center">
@@ -52,12 +52,13 @@ export default function CategoriesPage() {
       name: formData.name,
       description: formData.description,
       company: formData.company,
+      responsible: formData.responsible,
     }
 
     const updated = [...categories, newCategory]
     setCategories(updated)
     storage.setCategories(updated)
-    setFormData({ name: "", description: "", company: "" })
+    setFormData({ name: "", description: "", company: "", responsible: "" })
     setShowForm(false)
   }
 
@@ -67,7 +68,7 @@ export default function CategoriesPage() {
     const updated = categories.map((c) => (c.id === editingId ? { ...c, ...formData } : c))
     setCategories(updated)
     storage.setCategories(updated)
-    setFormData({ name: "", description: "", company: "" })
+    setFormData({ name: "", description: "", company: "", responsible: "" })
     setEditingId(null)
   }
 
@@ -78,7 +79,12 @@ export default function CategoriesPage() {
   }
 
   const handleEditClick = (category: EquipmentCategory) => {
-    setFormData({ name: category.name, description: category.description || "", company: category.company || "" })
+    setFormData({ 
+      name: category.name, 
+      description: category.description || "", 
+      company: category.company || "",
+      responsible: category.responsible || ""
+    })
     setEditingId(category.id)
     setShowForm(true)
   }
@@ -95,7 +101,7 @@ export default function CategoriesPage() {
             onClick={() => {
               setShowForm(!showForm)
               setEditingId(null)
-              setFormData({ name: "", description: "", company: "" })
+              setFormData({ name: "", description: "", company: "", responsible: "" })
             }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
           >
@@ -133,6 +139,15 @@ export default function CategoriesPage() {
                   className="bg-slate-700/50 border-slate-600 text-white"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Responsible</label>
+                <Input
+                  value={formData.responsible}
+                  onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
+                  placeholder="e.g., Director, Manager, Engineer"
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
               <div className="flex gap-2">
                 <Button
                   onClick={editingId ? handleUpdateCategory : handleAddCategory}
@@ -157,7 +172,8 @@ export default function CategoriesPage() {
                 <Badge className="bg-blue-600">{category.id.slice(-3)}</Badge>
               </div>
               {category.description && <p className="text-slate-400 text-sm mb-3">{category.description}</p>}
-              {category.company && <p className="text-slate-500 text-xs mb-4">Company: {category.company}</p>}
+              {category.company && <p className="text-slate-500 text-xs mb-2">Company: {category.company}</p>}
+              {category.responsible && <p className="text-slate-500 text-xs mb-4">Responsible: {category.responsible}</p>}
               <div className="flex gap-2">
                 <Button
                   onClick={() => handleEditClick(category)}

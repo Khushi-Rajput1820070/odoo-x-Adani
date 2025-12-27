@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import type { MaintenanceRequest, Equipment, User } from "@/lib/types"
+import type { MaintenanceRequest, Equipment, User, WorkCenter } from "@/lib/types"
 
 export default function RequestDetailPage() {
   const router = useRouter()
@@ -23,7 +23,10 @@ export default function RequestDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [durationHours, setDurationHours] = useState("")
   const [notes, setNotes] = useState("")
+  const [frequency, setFrequency] = useState("")
+  const [time, setTime] = useState("")
   const [users, setUsers] = useState<User[]>([])
+  const [workCenters, setWorkCenters] = useState<WorkCenter[]>([])
   const [selectedAssignee, setSelectedAssignee] = useState("")
   const [trackingLogs, setTrackingLogs] = useState<any[]>([])
   const [requirements, setRequirements] = useState<any[]>([])
@@ -46,6 +49,8 @@ export default function RequestDetailPage() {
       setRequest(found)
       setNotes(found.notes || "")
       setDurationHours(found.durationHours?.toString() || "")
+      setFrequency(found.frequency || "")
+      setTime(found.time || "")
       setSelectedAssignee(found.assignedToUserId || "")
 
       const eq = storage.getEquipment().find((e) => e.id === found.equipmentId)
@@ -61,24 +66,25 @@ export default function RequestDetailPage() {
     }
 
     setUsers(storage.getUsers())
+    setWorkCenters(storage.getWorkCenters())
   }, [requestId, router])
 
   const canViewRequest = () => {
     if (!request) return false
-    if (currentUser?.role === "admin" || currentUser?.role === "manager") return true
+    if (currentUser?.role === "admin") return true
     if (currentUser?.role === "technician" && request.assignedToUserId === currentUser?.id) return true
-    if (currentUser?.role === "requester" && request.requestedByUserId === currentUser?.id) return true
+    if (currentUser?.role === "user" && request.requestedByUserId === currentUser?.id) return true
     return false
   }
 
-  const canEditAssignment = () => currentUser?.role === "admin" || currentUser?.role === "manager"
+  const canEditAssignment = () => currentUser?.role === "admin"
   const canChangeStage = () => {
-    if (currentUser?.role === "admin" || currentUser?.role === "manager") return true
+    if (currentUser?.role === "admin") return true
     if (currentUser?.role === "technician" && request?.assignedToUserId === currentUser?.id) return true
     return false
   }
   const canEditDetails = () => {
-    if (currentUser?.role === "admin" || currentUser?.role === "manager") return true
+    if (currentUser?.role === "admin") return true
     if (currentUser?.role === "technician" && request?.assignedToUserId === currentUser?.id) return true
     return false
   }
@@ -109,7 +115,7 @@ export default function RequestDetailPage() {
     } else if (newStage === "Repaired" && request.stage !== "Repaired") {
       const requester = users.find((u) => u.id === request.requestedByUserId)
       const assignee = users.find((u) => u.id === request.assignedToUserId)
-      const adminsAndManagers = users.filter((u) => u.role === "admin" || u.role === "manager")
+      const admins = users.filter((u) => u.role === "admin")
 
       if (requester) {
         storage.addNotification({
@@ -125,7 +131,7 @@ export default function RequestDetailPage() {
         })
       }
 
-      adminsAndManagers.forEach((admin) => {
+      admins.forEach((admin) => {
         storage.addNotification({
           id: `notif-${Date.now()}-${admin.id}`,
           userId: admin.id,
@@ -195,6 +201,8 @@ export default function RequestDetailPage() {
       ...request,
       durationHours: durationHours ? Number(durationHours) : undefined,
       notes,
+      frequency: frequency || undefined,
+      time: time || undefined,
       updatedAt: new Date().toISOString(),
     }
 
@@ -314,8 +322,11 @@ export default function RequestDetailPage() {
             <h2 className="text-3xl font-bold text-white mb-2">{request.subject}</h2>
             <p className="text-slate-400">Request ID: {request.id}</p>
           </div>
-          <Button onClick={() => router.back()} className="bg-slate-700/50 border border-slate-600 text-slate-300">
-            Back
+          <Button 
+            onClick={() => router.push(currentUser.role === "user" ? "/dashboard" : "/maintenance")} 
+            className="bg-slate-700/50 border border-slate-600 text-slate-300"
+          >
+            {currentUser.role === "user" ? "Back to Dashboard" : "Back"}
           </Button>
         </div>
 
@@ -370,7 +381,7 @@ export default function RequestDetailPage() {
                 <p className="text-white font-medium">{equipment.serialNumber}</p>
               </div>
               <div>
-                <p className="text-slate-400">Category</p>
+                <p className="text-slate-400">Category / Type</p>
                 <p className="text-white font-medium">{equipment.category}</p>
               </div>
               <div>
@@ -378,6 +389,72 @@ export default function RequestDetailPage() {
                 <p className="text-white font-medium">{equipment.location}</p>
               </div>
             </div>
+            {currentUser.role === "user" && (
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <Button
+                  onClick={() => router.push(`/equipment/${equipment.id}`)}
+                  variant="outline"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  View Full Equipment Details
+                </Button>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Cost and Quantity Details */}
+        {(request.cost || request.costPerHour || request.quantity || request.workCenterId || request.location || request.dateTarget) && (
+          <Card className="bg-slate-800/30 border-slate-700/50 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Cost & Additional Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {request.cost !== undefined && (
+                <div>
+                  <p className="text-slate-400">Cost</p>
+                  <p className="text-white font-medium">${request.cost.toFixed(2)}</p>
+                </div>
+              )}
+              {request.costPerHour !== undefined && (
+                <div>
+                  <p className="text-slate-400">Cost per Hour</p>
+                  <p className="text-white font-medium">${request.costPerHour.toFixed(2)}</p>
+                </div>
+              )}
+              {request.quantity !== undefined && (
+                <div>
+                  <p className="text-slate-400">Quantity</p>
+                  <p className="text-white font-medium">
+                    {request.quantity} {request.quantityUnit || ""}
+                  </p>
+                </div>
+              )}
+              {request.workCenterId && (
+                <div>
+                  <p className="text-slate-400">Work Center</p>
+                  <p className="text-white font-medium">
+                    {workCenters.find((wc) => wc.id === request.workCenterId)?.name || request.workCenterId}
+                  </p>
+                </div>
+              )}
+              {request.location && (
+                <div>
+                  <p className="text-slate-400">Location</p>
+                  <p className="text-white font-medium">{request.location}</p>
+                </div>
+              )}
+              {request.dateTarget && (
+                <div>
+                  <p className="text-slate-400">Date Target</p>
+                  <p className="text-white font-medium">{new Date(request.dateTarget).toLocaleDateString()}</p>
+                </div>
+              )}
+            </div>
+            {request.alternativeInformation && (
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <p className="text-slate-400 text-sm mb-2">Alternative Information</p>
+                <p className="text-white text-sm">{request.alternativeInformation}</p>
+              </div>
+            )}
           </Card>
         )}
 
@@ -469,6 +546,24 @@ export default function RequestDetailPage() {
               )}
             </div>
 
+            {/* Attachments */}
+            <div>
+              <p className="text-sm font-medium text-slate-400 mb-2">Attachments</p>
+              {request.attachments && request.attachments.length > 0 ? (
+                <div className="space-y-2">
+                  {request.attachments.map((url, idx) => (
+                    <div key={idx} className="p-2 bg-slate-700/30 rounded border border-slate-600">
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm">
+                        Attachment {idx + 1}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-500 text-sm">No attachments</p>
+              )}
+            </div>
+
             {isEditing && (
               <Button
                 onClick={handleSave}
@@ -480,9 +575,8 @@ export default function RequestDetailPage() {
           </div>
         </Card>
 
-        {/* Tracking Log Section */}
-        {currentUser.role !== "user" && (
-          <Card className="bg-slate-800/30 border-slate-700/50 p-6">
+        {/* Tracking Log Section - Visible to all, but only Technician can add updates */}
+        <Card className="bg-slate-800/30 border-slate-700/50 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Update Tracking</h3>
               {currentUser.role === "technician" && request.assignedToUserId === currentUser.id && (
@@ -524,8 +618,7 @@ export default function RequestDetailPage() {
                 <p className="text-slate-400 text-sm">No updates yet</p>
               )}
             </div>
-          </Card>
-        )}
+        </Card>
 
         {/* Requirements Section */}
         {currentUser.role === "technician" && request.assignedToUserId === currentUser.id && (
@@ -605,20 +698,32 @@ export default function RequestDetailPage() {
           </Card>
         )}
 
-        {/* Admin can view and approve requirements */}
-        {currentUser.role === "admin" && requirements.length > 0 && (
+        {/* Admin and User can view requirements (Admin can approve, User can see what's needed) */}
+        {(currentUser.role === "admin" || currentUser.role === "user") && requirements.length > 0 && (
           <Card className="bg-slate-800/30 border-slate-700/50 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Submitted Requirements</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Maintenance Requirements</h3>
             <div className="space-y-3">
               {requirements.map((req: any) => (
                 <div key={req.id} className="p-3 bg-slate-700/20 rounded border border-slate-600/30">
                   <div className="flex items-start justify-between mb-2">
-                    <p className="text-white text-sm font-medium">Products: {req.products.join(", ")}</p>
+                    <p className="text-white text-sm font-medium">Products Needed: {req.products.join(", ")}</p>
                     <span className="text-xs text-slate-400">
-                      Submitted by {users.find((u) => u.id === req.submittedBy)?.name}
+                      {currentUser.role === "admin" && `Submitted by ${users.find((u) => u.id === req.submittedBy)?.name}`}
+                      {currentUser.role === "user" && (
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          req.status === "pending"
+                            ? "bg-yellow-500/20 text-yellow-300"
+                            : req.status === "approved"
+                              ? "bg-green-500/20 text-green-300"
+                              : "bg-red-500/20 text-red-300"
+                        }`}>
+                          {req.status}
+                        </span>
+                      )}
                     </span>
                   </div>
-                  {req.pricing && <p className="text-slate-300 text-sm">Pricing: ${req.pricing}</p>}
+                  {req.pricing && <p className="text-slate-300 text-sm">Estimated Cost: ${req.pricing}</p>}
+                  {req.notes && <p className="text-slate-400 text-xs mt-1">{req.notes}</p>}
                 </div>
               ))}
             </div>

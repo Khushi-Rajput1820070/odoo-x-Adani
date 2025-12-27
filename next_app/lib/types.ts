@@ -1,7 +1,7 @@
 // Core data types for GearGuard
 export type RequestStage = "New" | "In Progress" | "Repaired" | "Scrap"
 export type RequestType = "Corrective" | "Preventive"
-export type UserRole = "admin" | "technician" | "user" | "manager" | "requester"
+export type UserRole = "admin" | "technician" | "user"
 export type NotificationType =
   | "new_request"
   | "request_assigned"
@@ -54,6 +54,7 @@ export interface User {
   avatar?: string
   department?: string
   createdAt?: string
+  companyId: string // ID of the admin who owns this company (for admin, this is their own ID)
 }
 
 export interface Team {
@@ -62,18 +63,7 @@ export interface Team {
   description?: string
   memberIds: string[]
   createdAt?: string
-}
-
-export interface WorkCenter {
-  id: string
-  name: string
-  code: string
-  tag?: string
-  alternativeWorkcenters?: string[]
-  costPerHour?: number
-  capacityTimeEfficiency?: number
-  oeeTarget?: number
-  company?: string
+  companyId?: string
 }
 
 export interface Equipment {
@@ -81,29 +71,30 @@ export interface Equipment {
   name: string
   serialNumber: string
   category: string
-  company?: string
-  usedBy?: string // Employee name or ID
+  departmentId: string
+  assignedToUserId?: string
+  purchaseDate: string
+  warrantyExpiry?: string
+  location: string
   maintenanceTeamId: string
-  assignedDate?: string
-  description?: string
-  technicianId?: string // Responsible technician
-  scrapDate?: string
-  usedInLocation?: string
-  workCenterId?: string
   status: "Active" | "Inactive" | "Scrapped"
   notes?: string
-  departmentId?: string
+  // New fields from wireframe
+  company?: string
+  usedFor?: string
+  maintenanceType?: string // e.g., "External Maintenance"
+  assigneeDate?: string
+  employee?: string
+  stayDate?: string
+  workOrderId?: string
 }
 
 export interface MaintenanceRequest {
   id: string
   subject: string
   description?: string
-  maintenanceFor: "Equipment" | "WorkCenter"
-  equipmentId?: string
-  workCenterId?: string
   type: RequestType
-  category: string
+  equipmentId: string
   requestedByUserId: string
   assignedToUserId?: string
   teamId: string
@@ -111,21 +102,55 @@ export interface MaintenanceRequest {
   scheduledDate?: string
   completedDate?: string
   durationHours?: number
-  priority: "Low" | "Medium" | "High" | "Critical"
-  company?: string
   notes?: string
-  instructions?: string
   createdAt: string
   updatedAt: string
   isOverdue?: boolean
   trackingLogs?: TrackingLog[]
   requirements?: Requirement[]
   acceptedAt?: string
+  // New fields from wireframe
+  cost?: number
+  costPerHour?: number
+  quantity?: number
+  quantityUnit?: string
+  dateTarget?: string
+  alternativeInformation?: string
+  frequency?: string // e.g., "Daily", "Weekly", "Monthly"
+  location?: string
+  time?: string // Time field (HH:mm format)
+  attachments?: string[] // URLs or file paths
+  workCenterId?: string // Reference to work center
+}
+
+export interface WorkCenter {
+  id: string
+  name: string
+  cost?: number
+  quantity?: number
+  allocatedManHours?: number
+  costPerHour?: number
+  estimateTotalPrice?: number
+  costTarget?: number
+  description?: string
+  skills?: WorkCenterSkill[] // Skills/tasks/methods/processes for this work center
+  createdAt?: string
+  companyId?: string
+}
+
+export interface WorkCenterSkill {
+  id: string
+  workCenterId: string
+  name: string
+  description?: string
+  cost?: number
+  costPerHour?: number
 }
 
 export interface EquipmentCategory {
   id: string
   name: string
   description?: string
+  responsible?: string // e.g., "Director", "Manager", "Engineer"
   company?: string
 }

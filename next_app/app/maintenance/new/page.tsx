@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import type { MaintenanceRequest, Equipment, Team, User } from "@/lib/types"
+import type { MaintenanceRequest, Equipment, Team, User, WorkCenter } from "@/lib/types"
 
 export default function NewRequestPage() {
   const router = useRouter()
@@ -22,10 +22,20 @@ export default function NewRequestPage() {
     equipmentId: "",
     scheduledDate: "",
     priority: "Medium",
+    cost: "",
+    costPerHour: "",
+    quantity: "",
+    quantityUnit: "",
+    dateTarget: "",
+    alternativeInformation: "",
+    location: "",
+    time: "",
+    workCenterId: "",
   })
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [workCenters, setWorkCenters] = useState<WorkCenter[]>([])
   const [selectedTeam, setSelectedTeam] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -40,11 +50,12 @@ export default function NewRequestPage() {
     setEquipment(storage.getEquipment())
     setTeams(storage.getTeams())
     setUsers(storage.getUsers())
+    setWorkCenters(storage.getWorkCenters())
   }, [router])
 
   if (!currentUser) return null
 
-  if (!["admin", "manager", "requester"].includes(currentUser.role)) {
+  if (!["admin", "user"].includes(currentUser.role)) {
     return (
       <AppLayout activeTab="maintenance">
         <Card className="bg-slate-800/30 border-slate-700/50 p-8 text-center">
@@ -94,13 +105,23 @@ export default function NewRequestPage() {
       scheduledDate: formData.scheduledDate || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      cost: formData.cost ? Number(formData.cost) : undefined,
+      costPerHour: formData.costPerHour ? Number(formData.costPerHour) : undefined,
+      quantity: formData.quantity ? Number(formData.quantity) : undefined,
+      quantityUnit: formData.quantityUnit || undefined,
+      dateTarget: formData.dateTarget || undefined,
+      alternativeInformation: formData.alternativeInformation || undefined,
+      location: formData.location || undefined,
+      time: formData.time || undefined,
+      workCenterId: formData.workCenterId || undefined,
+      attachments: [],
     }
 
     const requests = storage.getRequests()
     storage.setRequests([...requests, newRequest])
 
-    const adminsAndManagers = users.filter((u) => u.role === "admin" || u.role === "manager")
-    adminsAndManagers.forEach((admin) => {
+    const admins = users.filter((u) => u.role === "admin")
+    admins.forEach((admin) => {
       storage.addNotification({
         id: `notif-${Date.now()}-${Math.random()}`,
         userId: admin.id,
@@ -114,9 +135,9 @@ export default function NewRequestPage() {
       })
     })
 
-    if (currentUser.role !== "admin" && currentUser.role !== "manager") {
+    if (currentUser.role === "user") {
       storage.addNotification({
-        id: `notif-${Date.now()}-requester`,
+        id: `notif-${Date.now()}-user`,
         userId: currentUser.id,
         type: "system_alert",
         title: "Request Submitted",
@@ -238,6 +259,113 @@ export default function NewRequestPage() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="bg-slate-700/50 border-slate-600 text-white min-h-32"
+              />
+            </div>
+
+            {/* Work Center */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Work Center</label>
+              <select
+                value={formData.workCenterId}
+                onChange={(e) => setFormData({ ...formData, workCenterId: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded text-white"
+              >
+                <option value="">Select Work Center (Optional)</option>
+                {workCenters.map((wc) => (
+                  <option key={wc.id} value={wc.id}>
+                    {wc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cost and Quantity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Cost</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.cost}
+                  onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Cost per Hour</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.costPerHour}
+                  onChange={(e) => setFormData({ ...formData, costPerHour: e.target.value })}
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Quantity</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Quantity Unit</label>
+                <Input
+                  placeholder="e.g., pcs, kg, hours"
+                  value={formData.quantityUnit}
+                  onChange={(e) => setFormData({ ...formData, quantityUnit: e.target.value })}
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
+            </div>
+
+            {/* Location and Date Target */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Location</label>
+                <Input
+                  placeholder="Location for maintenance"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Date Target</label>
+                <Input
+                  type="date"
+                  value={formData.dateTarget}
+                  onChange={(e) => setFormData({ ...formData, dateTarget: e.target.value })}
+                  className="bg-slate-700/50 border-slate-600 text-white"
+                />
+              </div>
+            </div>
+
+            {/* Time */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Time</label>
+              <Input
+                type="time"
+                value={formData.time}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                className="bg-slate-700/50 border-slate-600 text-white"
+              />
+            </div>
+
+            {/* Alternative Information */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Alternative Information</label>
+              <Textarea
+                placeholder="Additional information or alternatives..."
+                value={formData.alternativeInformation}
+                onChange={(e) => setFormData({ ...formData, alternativeInformation: e.target.value })}
+                className="bg-slate-700/50 border-slate-600 text-white min-h-24"
               />
             </div>
 

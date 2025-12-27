@@ -49,11 +49,13 @@ export default function UsersPage() {
       return
     }
 
+    const currentCompanyId = currentUser.companyId || currentUser.id
     const newUser: User = {
       id: `user-${Date.now()}`,
       name: formData.name,
       email: formData.email,
       role: formData.role,
+      companyId: currentCompanyId, // Same company as the admin who created them
       createdAt: new Date().toISOString(),
     }
 

@@ -39,6 +39,11 @@ export default function SelectEquipmentPage() {
     router.push(`/maintenance/new/issue?equipmentId=${equipmentId}`)
   }
 
+  const handleViewDetails = (equipmentId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/equipment/${equipmentId}`)
+  }
+
   if (!currentUser) return null
 
   return (
@@ -86,7 +91,21 @@ export default function SelectEquipmentPage() {
                     </span>
                   </p>
                 </div>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Report Issue</Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={(e) => handleViewDetails(item.id, e)}
+                    variant="outline"
+                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800"
+                  >
+                    View Details
+                  </Button>
+                  <Button 
+                    onClick={() => handleSelectEquipment(item.id)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Report Issue
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}

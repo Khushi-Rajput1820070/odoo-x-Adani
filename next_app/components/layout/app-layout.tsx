@@ -51,25 +51,19 @@ export default function AppLayout({ children, activeTab }: AppLayoutProps) {
         { id: "maintenance", label: "Maintenance", href: "/maintenance" },
         { id: "calendar", label: "Calendar", href: "/calendar" },
         { id: "equipment", label: "Equipment", href: "/equipment" },
+        { id: "work-centers", label: "Work Centers", href: "/work-centers" },
         { id: "categories", label: "Categories", href: "/categories" },
         { id: "teams", label: "Teams", href: "/teams" },
         { id: "users", label: "Users", href: "/users" },
-        { id: "reporting", label: "Reporting", href: "/reporting" },
-      ],
-      manager: [
-        { id: "maintenance", label: "Maintenance", href: "/maintenance" },
-        { id: "calendar", label: "Calendar", href: "/calendar" },
-        { id: "equipment", label: "Equipment", href: "/equipment" },
-        { id: "categories", label: "Categories", href: "/categories" },
-        { id: "teams", label: "Teams", href: "/teams" },
         { id: "reporting", label: "Reporting", href: "/reporting" },
       ],
       technician: [
         { id: "maintenance", label: "Tasks", href: "/maintenance?filter=assigned" },
         { id: "calendar", label: "Schedule", href: "/calendar" },
       ],
-      user: [{ id: "maintenance", label: "My Requests", href: "/maintenance?filter=my-requests" }],
-      requester: [{ id: "maintenance", label: "My Requests", href: "/maintenance?filter=my-requests" }],
+      user: [
+        { id: "maintenance", label: "My Requests", href: "/maintenance?filter=my-requests" },
+      ],
     }
 
     return [...baseItems, ...(roleItems[user.role] || [])]

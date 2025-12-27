@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { storage } from "@/lib/storage"
+import type { User } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,7 +18,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    storage.initializeDemoData()
+    // Only initialize demo data if no admin exists yet (for demo/testing purposes)
+    // In production, this should not be called
+    const allAdmins = storage.getAllAdmins()
+    if (allAdmins.length === 0 && !localStorage.getItem("gearguard_initialized")) {
+      // Only for first-time setup/demo - will be cleared when first admin signs up
+      storage.initializeDemoData()
+    }
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,8 +44,27 @@ export default function LoginPage() {
       return
     }
 
-    const users = storage.getUsers()
-    const user = users.find((u) => u.email === email && email.includes("@"))
+    // Search across all companies for the user
+    let user: User | null = null
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith("gearguard_company_") && key.endsWith("_users")) {
+        try {
+          const data = localStorage.getItem(key)
+          if (data) {
+            const users: User[] = JSON.parse(data)
+            const found = users.find((u) => u.email.toLowerCase().trim() === email.toLowerCase().trim())
+            if (found) {
+              user = found
+              break
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing users from storage:", error)
+          continue
+        }
+      }
+    }
 
     if (user) {
       storage.setCurrentUser(user)
@@ -53,13 +79,12 @@ export default function LoginPage() {
         createdAt: new Date().toISOString(),
       })
 
-      const redirectPath = {
+      const redirectPathMap: Record<string, string> = {
         admin: "/dashboard",
-        technician: "/maintenance?filter=assigned",
+        technician: "/dashboard",
         user: "/dashboard",
-        manager: "/dashboard",
-        requester: "/dashboard",
-      }[user.role] || "/dashboard"
+      }
+      const redirectPath = redirectPathMap[user.role] || "/dashboard"
 
       router.push(redirectPath)
     } else {
@@ -125,7 +150,7 @@ export default function LoginPage() {
                   <span className="text-yellow-400 font-medium">Technician:</span> tech1@gearguard.com
                 </p>
                 <p>
-                  <span className="text-green-400 font-medium">User:</span> requester@gearguard.com
+                  <span className="text-green-400 font-medium">User:</span> user@gearguard.com
                 </p>
               </div>
             </div>

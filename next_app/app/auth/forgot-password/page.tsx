@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    storage.initializeDemoData()
+    // Don't initialize demo data here - only check existing users
   }, [])
 
   const handleRequestReset = async (e: React.FormEvent) => {

@@ -25,6 +25,12 @@ export default function EquipmentDetailPage() {
     category: "",
     location: "",
     notes: "",
+    company: "",
+    usedFor: "",
+    maintenanceType: "",
+    assigneeDate: "",
+    employee: "",
+    stayDate: "",
   })
 
   useEffect(() => {
@@ -38,6 +44,12 @@ export default function EquipmentDetailPage() {
         category: found.category,
         location: found.location,
         notes: found.notes || "",
+        company: found.company || "",
+        usedFor: found.usedFor || "",
+        maintenanceType: found.maintenanceType || "",
+        assigneeDate: found.assigneeDate || "",
+        employee: found.employee || "",
+        stayDate: found.stayDate || "",
       })
 
       const equipmentRequests = storage.getRequests().filter((r) => r.equipmentId === equipmentId)
@@ -153,6 +165,60 @@ export default function EquipmentDetailPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Company</label>
+                  <Input
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Used For</label>
+                  <Input
+                    value={formData.usedFor}
+                    onChange={(e) => setFormData({ ...formData, usedFor: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Maintenance Type</label>
+                  <select
+                    value={formData.maintenanceType}
+                    onChange={(e) => setFormData({ ...formData, maintenanceType: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded text-white"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Internal Maintenance">Internal Maintenance</option>
+                    <option value="External Maintenance">External Maintenance</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Assignee Date</label>
+                  <Input
+                    type="date"
+                    value={formData.assigneeDate}
+                    onChange={(e) => setFormData({ ...formData, assigneeDate: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Employee</label>
+                  <Input
+                    value={formData.employee}
+                    onChange={(e) => setFormData({ ...formData, employee: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Stay Date</label>
+                  <Input
+                    type="date"
+                    value={formData.stayDate}
+                    onChange={(e) => setFormData({ ...formData, stayDate: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Notes</label>
                   <Textarea
                     value={formData.notes}
@@ -185,6 +251,42 @@ export default function EquipmentDetailPage() {
                   <p className="text-sm font-medium text-slate-400 mb-1">Location</p>
                   <p className="text-white">{equipment.location}</p>
                 </div>
+                {equipment.company && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-400 mb-1">Company</p>
+                    <p className="text-white">{equipment.company}</p>
+                  </div>
+                )}
+                {equipment.usedFor && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-400 mb-1">Used For</p>
+                    <p className="text-white">{equipment.usedFor}</p>
+                  </div>
+                )}
+                {equipment.maintenanceType && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-400 mb-1">Maintenance Type</p>
+                    <p className="text-white">{equipment.maintenanceType}</p>
+                  </div>
+                )}
+                {equipment.assigneeDate && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-400 mb-1">Assignee Date</p>
+                    <p className="text-white">{new Date(equipment.assigneeDate).toLocaleDateString()}</p>
+                  </div>
+                )}
+                {equipment.employee && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-400 mb-1">Employee</p>
+                    <p className="text-white">{equipment.employee}</p>
+                  </div>
+                )}
+                {equipment.stayDate && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-400 mb-1">Stay Date</p>
+                    <p className="text-white">{new Date(equipment.stayDate).toLocaleDateString()}</p>
+                  </div>
+                )}
                 {equipment.notes && (
                   <div>
                     <p className="text-sm font-medium text-slate-400 mb-1">Notes</p>

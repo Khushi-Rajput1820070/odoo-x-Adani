@@ -8,6 +8,7 @@ import type { Equipment, User } from "@/lib/types"
 import AppLayout from "@/components/layout/app-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 function IssueReportForm() {
@@ -16,7 +17,9 @@ function IssueReportForm() {
   const equipmentId = searchParams.get("equipmentId")
   const [equipment, setEquipment] = useState<Equipment | null>(null)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [subject, setSubject] = useState("")
   const [description, setDescription] = useState("")
+  const [priority, setPriority] = useState("Medium")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -39,8 +42,8 @@ function IssueReportForm() {
   }, [router, equipmentId])
 
   const handleSubmit = async () => {
-    if (!equipment || !description.trim()) {
-      alert("Please describe the issue")
+    if (!equipment || !subject.trim() || !description.trim()) {
+      alert("Please provide a subject and describe the issue")
       return
     }
 
@@ -48,8 +51,8 @@ function IssueReportForm() {
 
     const newRequest = {
       id: `req-${Date.now()}`,
-      subject: `${equipment.name} - Issue Report`,
-      description: description,
+      subject: subject.trim(),
+      description: description.trim(),
       type: "Corrective" as const,
       equipmentId: equipment.id,
       requestedByUserId: currentUser!.id,
@@ -81,16 +84,16 @@ function IssueReportForm() {
     storage.addNotification({
       id: `notif-user-${Date.now()}`,
       userId: currentUser!.id,
-      type: "request_updated",
-      title: "Issue Reported",
-      message: `Your issue report for ${equipment.name} has been submitted for review`,
+      type: "system_alert",
+      title: "Request Submitted Successfully",
+      message: `Your request has been submitted successfully. Request ID: ${newRequest.id}`,
       relatedId: newRequest.id,
       relatedType: "request",
       isRead: false,
       createdAt: new Date().toISOString(),
     })
 
-    router.push("/maintenance?filter=my-requests")
+    router.push("/dashboard")
     setIsSubmitting(false)
   }
 
@@ -108,14 +111,28 @@ function IssueReportForm() {
           <label className="block text-sm font-medium text-slate-300 mb-2">Equipment</label>
           <div className="p-4 bg-slate-700/30 rounded border border-slate-600">
             <p className="font-semibold text-white">{equipment.name}</p>
-            <p className="text-sm text-slate-400 mt-1">Serial: {equipment.serialNumber}</p>
+            <p className="text-sm text-slate-400 mt-1">Serial Number: {equipment.serialNumber}</p>
+            <p className="text-sm text-slate-400">Category: {equipment.category}</p>
             <p className="text-sm text-slate-400">Location: {equipment.location}</p>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">
-            Describe the Issue <span className="text-red-400">*</span>
+            Subject / Title <span className="text-red-400">*</span>
+          </label>
+          <Input
+            type="text"
+            placeholder="e.g., Leaking Oil, Paper Jam, Equipment Not Starting"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Description of the Issue <span className="text-red-400">*</span>
           </label>
           <Textarea
             placeholder="What is failing or not working properly? Describe the issue in detail..."
@@ -128,16 +145,30 @@ function IssueReportForm() {
           </p>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Priority</label>
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded text-white"
+          >
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+        </div>
+
         <div className="flex gap-3">
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
           >
-            {isSubmitting ? "Submitting..." : "Submit Issue Report"}
+            {isSubmitting ? "Submitting..." : "Submit Request"}
           </Button>
           <Button
-            onClick={() => router.push("/maintenance?filter=my-requests")}
+            onClick={() => router.push("/dashboard")}
             variant="outline"
             className="border-slate-600 text-slate-300 hover:bg-slate-800"
           >

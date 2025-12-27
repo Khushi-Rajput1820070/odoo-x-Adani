@@ -21,10 +21,9 @@ export default function SignupPage() {
   const [signupDisabled, setSignupDisabled] = useState(false)
 
   useEffect(() => {
-    storage.initializeDemoData()
-    const users = storage.getUsers()
-    const adminExists = users.some((u) => u.role === "admin")
-    setSignupDisabled(adminExists)
+    // Check if any admin exists across all companies
+    const allAdmins = storage.getAllAdmins()
+    setSignupDisabled(allAdmins.length > 0)
   }, [])
 
   if (signupDisabled) {
@@ -91,60 +90,44 @@ export default function SignupPage() {
       return
     }
 
-    const users = storage.getUsers()
-    if (users.some((u) => u.email === email)) {
+    // Check if email exists across all companies
+    const allAdmins = storage.getAllAdmins()
+    const emailExists = allAdmins.some((u) => u.email === email)
+    
+    if (emailExists) {
       setError("Email already exists")
       setIsLoading(false)
       return
     }
 
-    const isFirstUser = users.length === 0
+    // Create new admin user with companyId = their own ID (they own the company)
+    const adminId = Date.now().toString()
     const newUser: User = {
-      id: Date.now().toString(),
+      id: adminId,
       email,
       name,
-      role: isFirstUser ? "admin" : "technician",
+      role: "admin",
+      companyId: adminId, // Admin's companyId is their own ID
       createdAt: new Date().toISOString(),
     }
 
-    storage.setUsers([...users, newUser])
+    // Initialize completely fresh/empty system for this new company
+    storage.initializeCompanyData(adminId)
+    storage.setUsers([newUser])
 
-    if (isFirstUser) {
-      storage.addNotification({
-        id: `notif-${Date.now()}`,
-        userId: newUser.id,
-        type: "system_alert",
-        title: "Welcome, Admin",
-        message: "Your admin account has been created. You can now manage users and equipment.",
-        isRead: false,
-        createdAt: new Date().toISOString(),
-      })
-    } else {
-      const admins = users.filter((u) => u.role === "admin")
-      admins.forEach((admin) => {
-        storage.addNotification({
-          id: `notif-${Date.now()}-${Math.random()}`,
-          userId: admin.id,
-          type: "new_user_registered",
-          title: "New User Registration",
-          message: `New user registered: ${name} (${email})`,
-          relatedId: newUser.id,
-          relatedType: "user",
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        })
-      })
-
-      storage.addNotification({
-        id: `notif-${Date.now()}-user`,
-        userId: newUser.id,
-        type: "system_alert",
-        title: "Welcome to GearGuard",
-        message: "Your account has been created. Please log in to continue.",
-        isRead: false,
-        createdAt: new Date().toISOString(),
-      })
-    }
+    // Welcome notification for the new company admin
+    storage.addNotification({
+      id: `notif-${Date.now()}`,
+      userId: newUser.id,
+      type: "system_alert",
+      title: "Welcome, Company Admin",
+      message: "Your company account has been created. Your system is ready - start by adding equipment and users.",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    })
+    
+    // Set the new admin as current user and redirect to dashboard
+    storage.setCurrentUser(newUser)
 
     setIsLoading(false)
     router.push("/auth/login")
@@ -155,8 +138,8 @@ export default function SignupPage() {
       <Card className="w-full max-w-md bg-slate-800/50 backdrop-blur-md border-slate-700/50">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-slate-400">Join GearGuard Maintenance System</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Create Company Admin Account</h1>
+            <p className="text-slate-400">Set up your GearGuard Maintenance System</p>
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">

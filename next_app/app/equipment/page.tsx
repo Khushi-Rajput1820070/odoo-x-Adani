@@ -33,19 +33,10 @@ export default function EquipmentPage() {
 
   if (!currentUser) return null
 
-  if (currentUser.role === "user") {
-    return (
-      <AppLayout activeTab="maintenance">
-        <Card className="bg-slate-800/30 border-slate-700/50 p-8 text-center space-y-4">
-          <p className="text-slate-400">
-            To report an equipment issue, use the "Report Issue" button on your Dashboard.
-          </p>
-          <Button onClick={() => router.push("/equipment/select")} className="bg-blue-600 hover:bg-blue-700 text-white">
-            Report Equipment Issue
-          </Button>
-        </Card>
-      </AppLayout>
-    )
+  // Users can view equipment but not edit - they can see equipment details and report issues
+  const getUserEquipment = () => {
+    // For now, show all equipment. Admin can configure visibility later
+    return equipment
   }
 
   if (currentUser.role === "technician") {
@@ -61,7 +52,9 @@ export default function EquipmentPage() {
     )
   }
 
-  const filteredEquipment = equipment.filter((eq) => {
+  const userEquipment = currentUser.role === "user" ? getUserEquipment() : equipment
+  
+  const filteredEquipment = userEquipment.filter((eq) => {
     const matchesSearch =
       eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eq.serialNumber.toLowerCase().includes(searchTerm.toLowerCase())
@@ -82,15 +75,31 @@ export default function EquipmentPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white">Equipment Management</h2>
-            <p className="text-sm text-slate-400 mt-1">Manage and track all company assets</p>
+            <h2 className="text-3xl font-bold text-white">
+              {currentUser.role === "user" ? "Equipment List" : "Equipment Management"}
+            </h2>
+            <p className="text-sm text-slate-400 mt-1">
+              {currentUser.role === "user" 
+                ? "View equipment and report issues" 
+                : "Manage and track all company assets"}
+            </p>
           </div>
-          <Button
-            onClick={() => router.push("/equipment/new")}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
-          >
-            Add Equipment
-          </Button>
+          {currentUser.role === "admin" && (
+            <Button
+              onClick={() => router.push("/equipment/new")}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
+            >
+              Add Equipment
+            </Button>
+          )}
+          {currentUser.role === "user" && (
+            <Button
+              onClick={() => router.push("/equipment/select")}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
+            >
+              Report Issue
+            </Button>
+          )}
         </div>
 
         {/* Filters */}
@@ -122,13 +131,13 @@ export default function EquipmentPage() {
             return (
               <Card
                 key={eq.id}
-                className="bg-slate-800/30 border-slate-700/50 hover:border-slate-600 transition-all hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer group"
+                className="bg-slate-800/30 border-slate-700/50 hover:border-slate-600 transition-all hover:shadow-lg hover:shadow-blue-500/20 group"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 cursor-pointer" onClick={() => router.push(`/equipment/${eq.id}`)}>
-                      <h3 className="text-lg font-semibold text-white mb-1 hover:text-blue-400">{eq.name}</h3>
-                      <p className="text-sm text-slate-400">{eq.serialNumber}</p>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white mb-1">{eq.name}</h3>
+                      <p className="text-sm text-slate-400">Serial: {eq.serialNumber}</p>
                     </div>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -155,19 +164,37 @@ export default function EquipmentPage() {
                     </p>
                   </div>
 
-                  <Button
-                    onClick={() => router.push(`/equipment/${eq.id}`)}
-                    className={`w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white backdrop-blur relative ${
-                      openCount > 0 ? "ring-2 ring-orange-500/50" : ""
-                    }`}
-                  >
-                    <span>Maintenance</span>
-                    {openCount > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-orange-500/30 rounded-full">
-                        {openCount}
-                      </span>
-                    )}
-                  </Button>
+                  {currentUser.role === "admin" ? (
+                    <Button
+                      onClick={() => router.push(`/equipment/${eq.id}`)}
+                      className={`w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white backdrop-blur relative ${
+                        openCount > 0 ? "ring-2 ring-orange-500/50" : ""
+                      }`}
+                    >
+                      <span>Maintenance</span>
+                      {openCount > 0 && (
+                        <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-orange-500/30 rounded-full">
+                          {openCount}
+                        </span>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => router.push(`/equipment/${eq.id}`)}
+                        variant="outline"
+                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800"
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        onClick={() => router.push(`/maintenance/new/issue?equipmentId=${eq.id}`)}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white backdrop-blur"
+                      >
+                        Report Issue
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </Card>
             )
