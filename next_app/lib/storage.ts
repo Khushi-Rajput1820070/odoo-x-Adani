@@ -1,4 +1,4 @@
-// LocalStorage management for GearGuard
+// API-based storage management for GearGuard
 import type {
   User,
   Team,
@@ -9,284 +9,176 @@ import type {
   TrackingLog,
   Requirement,
   WorkCenter,
-} from "./types"
+} from "./types";
+import {
+  userApi,
+  teamApi,
+  equipmentApi,
+  requestApi,
+  categoryApi,
+  notificationApi,
+  trackingLogApi,
+  requirementApi,
+  workCenterApi,
+} from "./api";
 
-const STORAGE_PREFIX = "gearguard_"
+// In-memory cache for current user (since we can't store auth in localStorage in Next.js app)
+let currentUser: User | null = null;
 
 export const storage = {
   // User management
-  getUsers: (): User[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}users`)
-    return data ? JSON.parse(data) : []
+  getUsers: async (): Promise<User[]> => {
+    return await userApi.getAll();
   },
-  setUsers: (users: User[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}users`, JSON.stringify(users))
+  setUsers: async (users: User[]) => {
+    // In API-based storage, we update individual users
+    for (const user of users) {
+      await userApi.update(user);
+    }
   },
   getCurrentUser: (): User | null => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}currentUser`)
-    return data ? JSON.parse(data) : null
+    // For now, return the cached current user
+    // In a real app, this would be managed through authentication
+    return currentUser;
   },
   setCurrentUser: (user: User | null) => {
-    if (user) {
-      localStorage.setItem(`${STORAGE_PREFIX}currentUser`, JSON.stringify(user))
-    } else {
-      localStorage.removeItem(`${STORAGE_PREFIX}currentUser`)
-    }
+    currentUser = user;
   },
 
   // Teams
-  getTeams: (): Team[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}teams`)
-    return data ? JSON.parse(data) : []
+  getTeams: async (): Promise<Team[]> => {
+    return await teamApi.getAll();
   },
-  setTeams: (teams: Team[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}teams`, JSON.stringify(teams))
+  setTeams: async (teams: Team[]) => {
+    for (const team of teams) {
+      if (team.id) {
+        await teamApi.update(team);
+      } else {
+        await teamApi.create(team);
+      }
+    }
   },
 
   // Equipment
-  getEquipment: (): Equipment[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}equipment`)
-    return data ? JSON.parse(data) : []
+  getEquipment: async (): Promise<Equipment[]> => {
+    return await equipmentApi.getAll();
   },
-  setEquipment: (equipment: Equipment[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}equipment`, JSON.stringify(equipment))
+  setEquipment: async (equipment: Equipment[]) => {
+    for (const eq of equipment) {
+      if (eq.id) {
+        await equipmentApi.update(eq);
+      } else {
+        await equipmentApi.create(eq);
+      }
+    }
   },
 
   // Maintenance Requests
-  getRequests: (): MaintenanceRequest[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}requests`)
-    return data ? JSON.parse(data) : []
+  getRequests: async (): Promise<MaintenanceRequest[]> => {
+    return await requestApi.getAll();
   },
-  setRequests: (requests: MaintenanceRequest[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}requests`, JSON.stringify(requests))
+  setRequests: async (requests: MaintenanceRequest[]) => {
+    for (const req of requests) {
+      if (req.id) {
+        await requestApi.update(req);
+      } else {
+        await requestApi.create(req);
+      }
+    }
   },
 
   // Equipment Categories
-  getCategories: (): EquipmentCategory[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}categories`)
-    return data ? JSON.parse(data) : []
+  getCategories: async (): Promise<EquipmentCategory[]> => {
+    return await categoryApi.getAll();
   },
-  setCategories: (categories: EquipmentCategory[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}categories`, JSON.stringify(categories))
+  setCategories: async (categories: EquipmentCategory[]) => {
+    for (const cat of categories) {
+      if (cat.id) {
+        await categoryApi.update(cat);
+      } else {
+        await categoryApi.create(cat);
+      }
+    }
   },
   
   // Work Centers
-  getWorkCenters: (): WorkCenter[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}workcenters`)
-    return data ? JSON.parse(data) : []
+  getWorkCenters: async (): Promise<WorkCenter[]> => {
+    return await workCenterApi.getAll();
   },
-  setWorkCenters: (workcenters: WorkCenter[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}workcenters`, JSON.stringify(workcenters))
+  setWorkCenters: async (workcenters: WorkCenter[]) => {
+    for (const wc of workcenters) {
+      if (wc.id) {
+        await workCenterApi.update(wc);
+      } else {
+        await workCenterApi.create(wc);
+      }
+    }
   },
 
   // Notification management
-  getNotifications: (): Notification[] => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}notifications`)
-    return data ? JSON.parse(data) : []
+  getNotifications: async (): Promise<Notification[]> => {
+    // Get all notifications (in a real app, you might want to filter by current user)
+    return await notificationApi.getAll();
   },
-  setNotifications: (notifications: Notification[]) => {
-    localStorage.setItem(`${STORAGE_PREFIX}notifications`, JSON.stringify(notifications))
-  },
-  addNotification: (notification: Notification) => {
-    const notifications = storage.getNotifications()
-    notifications.push(notification)
-    storage.setNotifications(notifications)
-  },
-  getUserNotifications: (userId: string): Notification[] => {
-    return storage.getNotifications().filter((n) => n.userId === userId)
-  },
-  getUnreadNotificationCount: (userId: string): number => {
-    return storage.getNotifications().filter((n) => n.userId === userId && !n.isRead).length
-  },
-  markNotificationRead: (notificationId: string) => {
-    const notifications = storage.getNotifications()
-    const notification = notifications.find((n) => n.id === notificationId)
-    if (notification) {
-      notification.isRead = true
-      storage.setNotifications(notifications)
+  setNotifications: async (notifications: Notification[]) => {
+    for (const notif of notifications) {
+      if (notif.id) {
+        await notificationApi.update(notif);
+      } else {
+        await notificationApi.create(notif);
+      }
     }
   },
-  markAllNotificationsRead: (userId: string) => {
-    const notifications = storage.getNotifications()
-    notifications.forEach((n) => {
-      if (n.userId === userId) {
-        n.isRead = true
-      }
-    })
-    storage.setNotifications(notifications)
+  addNotification: async (notification: Notification) => {
+    await notificationApi.create(notification);
   },
-  clearUserNotifications: (userId: string) => {
-    const notifications = storage.getNotifications()
-    storage.setNotifications(notifications.filter((n) => n.userId !== userId))
+  getUserNotifications: async (userId: string): Promise<Notification[]> => {
+    return await notificationApi.getByUser(userId);
+  },
+  getUnreadNotificationCount: async (userId: string): Promise<number> => {
+    const notifications = await notificationApi.getByUser(userId);
+    return notifications.filter((n) => !n.isRead).length;
+  },
+  markNotificationRead: async (notificationId: string) => {
+    await notificationApi.markAsRead(notificationId);
+  },
+  markAllNotificationsRead: async (userId: string) => {
+    const notifications = await notificationApi.getByUser(userId);
+    const unreadNotifications = notifications.filter((n) => !n.isRead);
+    for (const notification of unreadNotifications) {
+      await notificationApi.markAsRead(notification.id);
+    }
+  },
+  clearUserNotifications: async (userId: string) => {
+    // In a real app, you would have an API endpoint for this
+    // For now, we'll mark all as read
+    await storage.markAllNotificationsRead(userId);
   },
 
   // Tracking Logs management
-  getTrackingLogs: (requestId: string): TrackingLog[] => {
-    const logs = localStorage.getItem(`${STORAGE_PREFIX}tracking_${requestId}`)
-    return logs ? JSON.parse(logs) : []
+  getTrackingLogs: async (requestId: string): Promise<TrackingLog[]> => {
+    return await trackingLogApi.getByRequest(requestId);
   },
-  addTrackingLog: (requestId: string, log: TrackingLog) => {
-    const logs = storage.getTrackingLogs(requestId)
-    logs.push(log)
-    localStorage.setItem(`${STORAGE_PREFIX}tracking_${requestId}`, JSON.stringify(logs))
+  addTrackingLog: async (requestId: string, log: TrackingLog) => {
+    await trackingLogApi.create({ ...log, requestId });
   },
 
   // Requirements management
-  getRequirements: (requestId: string): Requirement[] => {
-    const reqs = localStorage.getItem(`${STORAGE_PREFIX}requirements_${requestId}`)
-    return reqs ? JSON.parse(reqs) : []
+  getRequirements: async (requestId: string): Promise<Requirement[]> => {
+    return await requirementApi.getByRequest(requestId);
   },
-  addRequirement: (requestId: string, requirement: Requirement) => {
-    const reqs = storage.getRequirements(requestId)
-    reqs.push(requirement)
-    localStorage.setItem(`${STORAGE_PREFIX}requirements_${requestId}`, JSON.stringify(reqs))
+  addRequirement: async (requestId: string, requirement: Requirement) => {
+    await requirementApi.create({ ...requirement, requestId });
   },
-  updateRequirement: (requestId: string, requirementId: string, updates: Partial<Requirement>) => {
-    const reqs = storage.getRequirements(requestId)
-    const req = reqs.find((r) => r.id === requirementId)
-    if (req) {
-      Object.assign(req, updates)
-      localStorage.setItem(`${STORAGE_PREFIX}requirements_${requestId}`, JSON.stringify(reqs))
-    }
+  updateRequirement: async (requestId: string, requirementId: string, updates: Partial<Requirement>) => {
+    const requirement = await requirementApi.getById(requirementId);
+    Object.assign(requirement, updates);
+    await requirementApi.update(requirement);
   },
 
-  // Initialize demo data
+  // Initialize demo data is not needed when using API storage
   initializeDemoData: () => {
-    if (localStorage.getItem(`${STORAGE_PREFIX}initialized`)) return
-
-    const demoUsers: User[] = [
-      {
-        id: "1",
-        email: "admin@gearguard.com",
-        name: "Admin User",
-        role: "admin",
-      },
-      {
-        id: "2",
-        email: "manager@gearguard.com",
-        name: "John Manager",
-        role: "manager",
-      },
-      {
-        id: "3",
-        email: "tech1@gearguard.com",
-        name: "Alex Foster",
-        role: "technician",
-      },
-      {
-        id: "4",
-        email: "tech2@gearguard.com",
-        name: "Sarah Johnson",
-        role: "technician",
-      },
-      {
-        id: "5",
-        email: "requester@gearguard.com",
-        name: "Mike Requester",
-        role: "requester",
-      },
-    ]
-
-    const demoTeams: Team[] = [
-      { id: "t1", name: "Internal Maintenance", memberIds: ["3"] },
-      { id: "t2", name: "Radiology", memberIds: ["4"] },
-      { id: "t3", name: "Admin", memberIds: ["3", "4"] },
-    ]
-
-    const demoWorkCenters: WorkCenter[] = [
-      {
-        id: "wc1",
-        name: "Assembly 1",
-        code: "ASSEMBLY1",
-        costPerHour: 100,
-        capacityTimeEfficiency: 100,
-        oeeTarget: 34.59,
-        company: "My Company (San Francisco)",
-      },
-      {
-        id: "wc2",
-        name: "Drill 1",
-        code: "DRILL1",
-        costPerHour: 100,
-        capacityTimeEfficiency: 100,
-        oeeTarget: 90.00,
-        company: "My Company (San Francisco)",
-      },
-    ]
-
-    const demoEquipment: Equipment[] = [
-      {
-        id: "e1",
-        name: "Samsung Monitor 15\"",
-        serialNumber: "V7SD21239853F",
-        category: "Monitors",
-        company: "My Company (San Francisco)",
-        usedBy: "Mitchell Admin",
-        maintenanceTeamId: "t1",
-        assignedDate: "2023-12-24",
-        technicianId: "3",
-        status: "Active",
-      },
-      {
-        id: "e2",
-        name: "Acer Laptop",
-        serialNumber: "AC9322PR3222",
-        category: "Computers",
-        company: "My Company (San Francisco)",
-        usedBy: "Abigail Peterson",
-        maintenanceTeamId: "t1",
-        technicianId: "4",
-        status: "Active",
-      },
-    ]
-
-    const demoRequests: MaintenanceRequest[] = [
-      {
-        id: "r1",
-        subject: "Test activity",
-        maintenanceFor: "Equipment",
-        equipmentId: "e2",
-        type: "Corrective",
-        category: "Computers",
-        requestedByUserId: "1",
-        assignedToUserId: "3",
-        teamId: "t1",
-        stage: "In Progress",
-        scheduledDate: "2023-12-24T14:33:00",
-        durationHours: 10,
-        priority: "High",
-        company: "My Company (San Francisco)",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    const demoCategories: EquipmentCategory[] = [
-      { id: "cat1", name: "Computers", description: "All computer equipment", company: "My Company (San Francisco)" },
-      { id: "cat2", name: "Software", description: "Software licenses", company: "My Company (San Francisco)" },
-      { id: "cat3", name: "Monitors", description: "Display monitors", company: "My Company (San Francisco)" },
-    ]
-
-    const demoNotifications: Notification[] = [
-      { 
-        id: "n1", 
-        userId: "1", 
-        type: "new_request",
-        title: "New Request",
-        message: "New maintenance request for Acer Laptop", 
-        isRead: false,
-        createdAt: new Date().toISOString()
-      },
-    ]
-
-    storage.setUsers(demoUsers)
-    storage.setTeams(demoTeams)
-    storage.setWorkCenters(demoWorkCenters)
-    storage.setEquipment(demoEquipment)
-    storage.setRequests(demoRequests)
-    storage.setCategories(demoCategories)
-    storage.setNotifications(demoNotifications)
-
-    localStorage.setItem(`${STORAGE_PREFIX}initialized`, "true")
+    // No-op when using API storage
+    console.log("Using API-based storage, skipping demo data initialization");
   },
-}
+};
