@@ -1,7 +1,7 @@
 // Core data types for GearGuard
 export type RequestStage = "New" | "In Progress" | "Repaired" | "Scrap"
 export type RequestType = "Corrective" | "Preventive"
-export type UserRole = "admin" | "technician" | "user"
+export type UserRole = "admin" | "technician" | "user" | "manager" | "requester"
 export type NotificationType =
   | "new_request"
   | "request_assigned"

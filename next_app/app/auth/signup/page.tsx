@@ -217,13 +217,20 @@ export default function SignupPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-slate-400">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="text-blue-400 hover:text-blue-300">
-                Login here
+          <div className="mt-6 space-y-3">
+            <div className="text-center">
+              <p className="text-slate-400 mb-3">
+                Already have an account?
+              </p>
+              <Link href="/auth/login">
+                <Button
+                  variant="outline"
+                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                >
+                  Back to Login
+                </Button>
               </Link>
-            </p>
+            </div>
           </div>
         </div>
       </Card>

@@ -61,7 +61,7 @@ function MaintenanceContent() {
 
     if (currentUser.role === "technician" || filter === "assigned") {
       filtered = requests.filter((r) => r.assignedToUserId === currentUser.id)
-    } else if (currentUser.role === "user" || filter === "my-requests") {
+    } else if (currentUser.role === "user" || currentUser.role === "requester" || filter === "my-requests") {
       filtered = requests.filter((r) => r.requestedByUserId === currentUser.id)
     }
 
