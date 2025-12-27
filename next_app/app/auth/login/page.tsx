@@ -15,13 +15,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [showSignUpLink, setShowSignUpLink] = useState(false)
 
   useEffect(() => {
     storage.initializeDemoData()
-    const users = storage.getUsers()
-    const admins = users.filter((u) => u.role === "admin")
-    setShowSignUpLink(admins.length === 0)
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -135,17 +131,15 @@ export default function LoginPage() {
             </div>
 
             <div className="flex gap-2 text-sm">
-              {showSignUpLink && (
-                <Link
-                  href="/auth/signup"
-                  className="flex-1 text-center px-3 py-2 rounded border border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                >
-                  Sign Up
-                </Link>
-              )}
+              <Link
+                href="/auth/signup"
+                className="flex-1 text-center px-3 py-2 rounded border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 transition-colors"
+              >
+                Sign Up
+              </Link>
               <Link
                 href="/auth/forgot-password"
-                className={`${showSignUpLink ? "flex-1" : "w-full"} text-center px-3 py-2 rounded border border-slate-500/30 text-slate-400 hover:bg-slate-500/10`}
+                className="flex-1 text-center px-3 py-2 rounded border border-slate-500/30 text-slate-400 hover:bg-slate-500/10 transition-colors"
               >
                 Forgot Password
               </Link>
