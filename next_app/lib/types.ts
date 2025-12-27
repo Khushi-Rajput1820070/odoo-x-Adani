@@ -64,27 +64,46 @@ export interface Team {
   createdAt?: string
 }
 
+export interface WorkCenter {
+  id: string
+  name: string
+  code: string
+  tag?: string
+  alternativeWorkcenters?: string[]
+  costPerHour?: number
+  capacityTimeEfficiency?: number
+  oeeTarget?: number
+  company?: string
+}
+
 export interface Equipment {
   id: string
   name: string
   serialNumber: string
   category: string
-  departmentId: string
-  assignedToUserId?: string
-  purchaseDate: string
-  warrantyExpiry?: string
-  location: string
+  company?: string
+  usedBy?: string // Employee name or ID
   maintenanceTeamId: string
+  assignedDate?: string
+  description?: string
+  technicianId?: string // Responsible technician
+  scrapDate?: string
+  usedInLocation?: string
+  workCenterId?: string
   status: "Active" | "Inactive" | "Scrapped"
   notes?: string
+  departmentId?: string
 }
 
 export interface MaintenanceRequest {
   id: string
   subject: string
   description?: string
+  maintenanceFor: "Equipment" | "WorkCenter"
+  equipmentId?: string
+  workCenterId?: string
   type: RequestType
-  equipmentId: string
+  category: string
   requestedByUserId: string
   assignedToUserId?: string
   teamId: string
@@ -92,7 +111,10 @@ export interface MaintenanceRequest {
   scheduledDate?: string
   completedDate?: string
   durationHours?: number
+  priority: "Low" | "Medium" | "High" | "Critical"
+  company?: string
   notes?: string
+  instructions?: string
   createdAt: string
   updatedAt: string
   isOverdue?: boolean

@@ -8,6 +8,7 @@ import type {
   Notification,
   TrackingLog,
   Requirement,
+  WorkCenter,
 } from "./types"
 
 const STORAGE_PREFIX = "gearguard_"
@@ -67,6 +68,15 @@ export const storage = {
   },
   setCategories: (categories: EquipmentCategory[]) => {
     localStorage.setItem(`${STORAGE_PREFIX}categories`, JSON.stringify(categories))
+  },
+  
+  // Work Centers
+  getWorkCenters: (): WorkCenter[] => {
+    const data = localStorage.getItem(`${STORAGE_PREFIX}workcenters`)
+    return data ? JSON.parse(data) : []
+  },
+  setWorkCenters: (workcenters: WorkCenter[]) => {
+    localStorage.setItem(`${STORAGE_PREFIX}workcenters`, JSON.stringify(workcenters))
   },
 
   // Notification management
@@ -178,44 +188,54 @@ export const storage = {
     ]
 
     const demoTeams: Team[] = [
-      { id: "t1", name: "Mechanics", memberIds: ["3"] },
-      { id: "t2", name: "Electricians", memberIds: ["4"] },
-      { id: "t3", name: "IT Support", memberIds: ["3", "4"] },
+      { id: "t1", name: "Internal Maintenance", memberIds: ["3"] },
+      { id: "t2", name: "Radiology", memberIds: ["4"] },
+      { id: "t3", name: "Admin", memberIds: ["3", "4"] },
+    ]
+
+    const demoWorkCenters: WorkCenter[] = [
+      {
+        id: "wc1",
+        name: "Assembly 1",
+        code: "ASSEMBLY1",
+        costPerHour: 100,
+        capacityTimeEfficiency: 100,
+        oeeTarget: 34.59,
+        company: "My Company (San Francisco)",
+      },
+      {
+        id: "wc2",
+        name: "Drill 1",
+        code: "DRILL1",
+        costPerHour: 100,
+        capacityTimeEfficiency: 100,
+        oeeTarget: 90.00,
+        company: "My Company (San Francisco)",
+      },
     ]
 
     const demoEquipment: Equipment[] = [
       {
         id: "e1",
-        name: "CNC Machine 01",
-        serialNumber: "CNM-2024-001",
-        category: "Machine",
-        departmentId: "prod",
-        purchaseDate: "2023-01-15",
-        warrantyExpiry: "2025-01-15",
-        location: "Production Floor - Bay 1",
+        name: "Samsung Monitor 15\"",
+        serialNumber: "V7SD21239853F",
+        category: "Monitors",
+        company: "My Company (San Francisco)",
+        usedBy: "Mitchell Admin",
         maintenanceTeamId: "t1",
+        assignedDate: "2023-12-24",
+        technicianId: "3",
         status: "Active",
       },
       {
         id: "e2",
-        name: "Printer 01",
-        serialNumber: "PRT-2024-001",
-        category: "Computer",
-        departmentId: "office",
-        purchaseDate: "2022-06-20",
-        location: "Main Office - Room 101",
-        maintenanceTeamId: "t3",
-        status: "Active",
-      },
-      {
-        id: "e3",
-        name: "Forklift A",
-        serialNumber: "FRK-2024-001",
-        category: "Vehicle",
-        departmentId: "warehouse",
-        purchaseDate: "2021-11-10",
-        location: "Warehouse - Loading Bay",
+        name: "Acer Laptop",
+        serialNumber: "AC9322PR3222",
+        category: "Computers",
+        company: "My Company (San Francisco)",
+        usedBy: "Abigail Peterson",
         maintenanceTeamId: "t1",
+        technicianId: "4",
         status: "Active",
       },
     ]
@@ -223,57 +243,45 @@ export const storage = {
     const demoRequests: MaintenanceRequest[] = [
       {
         id: "r1",
-        subject: "Leaking Oil",
+        subject: "Test activity",
+        maintenanceFor: "Equipment",
+        equipmentId: "e2",
         type: "Corrective",
-        equipmentId: "e1",
-        requestedByUserId: "2",
+        category: "Computers",
+        requestedByUserId: "1",
         assignedToUserId: "3",
         teamId: "t1",
         stage: "In Progress",
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-        isOverdue: true,
-      },
-      {
-        id: "r2",
-        subject: "Paper Jam",
-        type: "Corrective",
-        equipmentId: "e2",
-        requestedByUserId: "2",
-        teamId: "t3",
-        stage: "New",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "r3",
-        subject: "Routine Maintenance",
-        type: "Preventive",
-        equipmentId: "e3",
-        requestedByUserId: "2",
-        teamId: "t1",
-        stage: "New",
-        scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        scheduledDate: "2023-12-24T14:33:00",
+        durationHours: 10,
+        priority: "High",
+        company: "My Company (San Francisco)",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
     ]
 
     const demoCategories: EquipmentCategory[] = [
-      { id: "cat1", name: "Machine", description: "Industrial machines and CNC equipment" },
-      { id: "cat2", name: "Computer", description: "Computers, printers, and IT equipment" },
-      { id: "cat3", name: "Vehicle", description: "Vehicles and transport equipment" },
-      { id: "cat4", name: "Tool", description: "Hand tools and power tools" },
+      { id: "cat1", name: "Computers", description: "All computer equipment", company: "My Company (San Francisco)" },
+      { id: "cat2", name: "Software", description: "Software licenses", company: "My Company (San Francisco)" },
+      { id: "cat3", name: "Monitors", description: "Display monitors", company: "My Company (San Francisco)" },
     ]
 
     const demoNotifications: Notification[] = [
-      { id: "n1", userId: "1", message: "New maintenance request for CNC Machine 01", isRead: false },
-      { id: "n2", userId: "2", message: "Paper Jam resolved on Printer 01", isRead: true },
-      { id: "n3", userId: "3", message: "Scheduled maintenance for Forklift A", isRead: false },
+      { 
+        id: "n1", 
+        userId: "1", 
+        type: "new_request",
+        title: "New Request",
+        message: "New maintenance request for Acer Laptop", 
+        isRead: false,
+        createdAt: new Date().toISOString()
+      },
     ]
 
     storage.setUsers(demoUsers)
     storage.setTeams(demoTeams)
+    storage.setWorkCenters(demoWorkCenters)
     storage.setEquipment(demoEquipment)
     storage.setRequests(demoRequests)
     storage.setCategories(demoCategories)
